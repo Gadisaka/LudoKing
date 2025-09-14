@@ -51,8 +51,24 @@ const Withdraw = () => {
 
   const withdrawAmount = parseFloat(amount) || 0;
 
+  // Get minimum amount for selected method
+  const getMinAmount = () => {
+    if (!selectedMethod) return 0;
+    const method = withdrawMethods.find((m) => m.id === selectedMethod);
+    return method ? method.minAmount : 0;
+  };
+
+  const minAmount = getMinAmount();
+  const isAmountBelowMinimum = withdrawAmount > 0 && withdrawAmount < minAmount;
+
   const handleWithdraw = async () => {
-    if (!selectedMethod || !amount || withdrawAmount > balance) return;
+    if (
+      !selectedMethod ||
+      !amount ||
+      withdrawAmount > balance ||
+      isAmountBelowMinimum
+    )
+      return;
 
     try {
       clearError();
@@ -135,6 +151,12 @@ const Withdraw = () => {
             onChange={(e) => setAmount(e.target.value)}
             className="w-full bg-gray-800 border border-gray-600 text-white placeholder-gray-400 text-2xl h-14 rounded-md px-4 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             max={balance}
+            min={
+              selectedMethod
+                ? withdrawMethods.find((m) => m.id === selectedMethod)
+                    ?.minAmount || 0
+                : 0
+            }
           />
           <div className="flex space-x-2 mt-2">
             {[100, 500, 1000, balance].map((preset, index) => (
@@ -242,11 +264,29 @@ const Withdraw = () => {
             </div>
           </div>
         )}
+
+        {/* Warning for amount below minimum */}
+        {isAmountBelowMinimum && (
+          <div className="bg-red-900/20 border border-red-700 rounded-xl p-6 mb-4">
+            <div className="flex items-center space-x-3 text-red-400">
+              <FaExclamationTriangle className="w-5 h-5" />
+              <p className="text-sm">
+                Minimum withdrawal amount for{" "}
+                {withdrawMethods.find((m) => m.id === selectedMethod)?.name} is{" "}
+                {minAmount} ብር.
+              </p>
+            </div>
+          </div>
+        )}
         {/* Withdraw Button */}
         <button
           onClick={handleWithdraw}
           disabled={
-            !selectedMethod || !amount || withdrawAmount > balance || loading
+            !selectedMethod ||
+            !amount ||
+            withdrawAmount > balance ||
+            isAmountBelowMinimum ||
+            loading
           }
           className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 text-lg rounded-xl disabled:bg-gray-600 flex items-center justify-center"
         >

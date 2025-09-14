@@ -402,9 +402,34 @@ const Deposit = () => {
 
             {/* Guidance Text */}
             <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4 mb-6">
-              <p className="text-blue-300 text-sm">
-                ከላይ ባለው አካውንት ገንዘብ ካስገቡ ቡሃላ ከደረሰኙ ላይ ያለውን Transaction Id ከታች
-                ያስገቡ. ለማንኛውም አይነት ችግር በ 0911111111 ይደውሉ
+              <p className="text-blue-300 text-sm whitespace-pre-line">
+                {(() => {
+                  const selectedPaymentMethod = paymentMethods.find(
+                    (method) => method.id === selectedMethod
+                  );
+                  if (!selectedPaymentMethod) return "";
+
+                  const bankName = selectedPaymentMethod.name.toLowerCase();
+                  const receiverName = selectedPaymentMethod.description;
+                  const accountNumber = selectedPaymentMethod.number;
+
+                  if (bankName.includes("cbe")) {
+                    return `በሲቢኢ ለማስገባት እባክዎ እነዚህን ደረጃዎች ይከተሉ 
+1. ${amount} ETB ወደሚከተለው አካውንት ያስተላልፉ: - የአካውንት ቁጥር: ${accountNumber} - የአካውንት ስም: ${receiverName} 
+2. ከማስተላለፍ በኋላ እንደዚህ ያለ ሊንክ ያለው የማረጋገጫ መልእክት ይደርሶታል : https://apps.cbe.com.et: 100/?id=FT2516052C43... 
+3. የግብይት መለያውን (FT እና 10 ፊደሎችን ተከተሎ የሚመጣውን) ይቅዱ`;
+                  } else if (bankName.includes("telebirr")) {
+                    return `በቴሌብር ለማስገባት እባክዎ እነዚህን ደረጃዎች ይከተሉ:
+
+1. ${amount} ETB ወደሚከተለው አካውንት ያስተላልፉ: - የአካውንት ቁጥር: ${accountNumber} - የአካውንት ስም: ${receiverName}
+
+2. ከማስተላለፍ በኋላ Transaction Id ያለው የማረጋገጫ መልእክት ይደርሶታል
+
+3. የግብይት መለያውን (Transaction Id) እዚህ ያስገቡ`;
+                  } else {
+                    return "ከላይ ባለው አካውንት ገንዘብ ካስገቡ ቡሃላ ከደረሰኙ ላይ ያለውን Transaction Id ከታች ያስገቡ. ለማንኛውም አይነት ችግር በ 0911111111 ይደውሉ";
+                  }
+                })()}
               </p>
             </div>
 
