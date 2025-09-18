@@ -28,6 +28,15 @@ const PlayingPage = () => {
   // Cut percentage state
   const [cutPercentage, setCutPercentage] = useState(10); // Default 10%
 
+  // Loading state for refresh button
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshTimeoutRef = useRef(null);
+
+  // Debug effect to track isRefreshing state changes
+  useEffect(() => {
+    console.log("🔄 isRefreshing state changed to:", isRefreshing);
+  }, [isRefreshing]);
+
   const {
     value,
     isRolling,
@@ -191,11 +200,14 @@ const PlayingPage = () => {
     }
   }
 
-  // Cleanup timer on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (leaveTimerRef.current) {
         clearInterval(leaveTimerRef.current);
+      }
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
       }
     };
   }, []);
@@ -217,16 +229,52 @@ const PlayingPage = () => {
       // Handle other player leaving (not applicable for current user)
     };
 
+    const handleGameData = (gameData) => {
+      console.log("🔄 Game data received, hiding loading:", gameData);
+      console.log("🔄 Setting isRefreshing to false due to gameData");
+
+      // Clear the safety timeout
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+
+      // Add small delay to ensure loading is visible
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 800);
+    };
+
+    const handleRoomUpdate = (data) => {
+      console.log("🔄 Room update received, hiding loading:", data);
+      console.log("🔄 Setting isRefreshing to false due to room_update");
+
+      // Clear the safety timeout
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+
+      // Add small delay to ensure loading is visible
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 800);
+    };
+
     // Add event listeners
     socket.on("room_deleted", handleRoomDeleted);
     socket.on("left_room", handleLeftRoom);
     socket.on("player_left", handlePlayerLeft);
+    socket.on("gameData", handleGameData);
+    socket.on("room_update", handleRoomUpdate);
 
     // Cleanup event listeners
     return () => {
       socket.off("room_deleted", handleRoomDeleted);
       socket.off("left_room", handleLeftRoom);
       socket.off("player_left", handlePlayerLeft);
+      socket.off("gameData", handleGameData);
+      socket.off("room_update", handleRoomUpdate);
     };
   }, [navigate]);
 
@@ -297,10 +345,28 @@ const PlayingPage = () => {
           <button
             className="rounded-full p-1 cursor-pointer transition-colors bg-blue-500 hover:bg-blue-600"
             onClick={() => {
+              console.log(
+                "🔄 Refresh button clicked - setting isRefreshing to true"
+              );
+
+              // Clear any existing timeout
+              if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+              }
+
+              setIsRefreshing(true);
+              console.log("🔄 isRefreshing state should now be true");
               socket.emit("getGameData", { gameId: roomId });
               console.log("Manual refresh requested for room:", roomId);
+
+              // Safety timeout to hide loading after 1.5 seconds
+              refreshTimeoutRef.current = setTimeout(() => {
+                console.log("🔄 Safety timeout reached - hiding loading");
+                setIsRefreshing(false);
+              }, 4000);
             }}
             title="Refresh game settings"
+            disabled={isRefreshing}
           >
             <svg
               width="20px"
@@ -410,6 +476,55 @@ const PlayingPage = () => {
           </div>
         )}
       </div>
+
+      {/* Refresh Loading Overlay */}
+      {isRefreshing &&
+        (console.log("🔄 Rendering loading overlay - isRefreshing is true"),
+        (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+            <div className="bg-gray-800/30 border border-blue-500/30 rounded-2xl p-8 text-center shadow-2xl backdrop-blur-md">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Refreshing Game
+                </h2>
+                <p className="text-gray-300">Refreshing game settings...</p>
+              </div>
+
+              {/* Spinning refresh icon */}
+              <div className="mb-6 flex justify-center">
+                <svg
+                  width="60px"
+                  height="60px"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-blue-400 animate-spin"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 4v5h.582M20 20v-5h-.581M19.418 9A7.978 7.978 0 0012 4c-3.042 0-5.824 1.721-7.418 4M4.582 15A7.978 7.978 0 0012 20c3.042 0 5.824-1.721 7.418-4"
+                  />
+                </svg>
+              </div>
+
+              {/* Loading dots animation */}
+              <div className="flex justify-center space-x-2">
+                <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"></div>
+                <div
+                  className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        ))}
 
       {/* Leave Countdown Overlay */}
       {showLeaveCountdown && (

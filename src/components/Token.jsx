@@ -60,7 +60,7 @@ function Token({
         if (idx < tokenIdx) {
           lightTimeoutRef.current = setTimeout(
             () => animateLight(idx + 1),
-            300
+            150
           );
         } else {
           // Remove the light after a short time at the final position
@@ -72,7 +72,7 @@ function Token({
       }
       lightTimeoutRef.current = setTimeout(
         () => animateLight(startIdx + 1),
-        300
+        100
       );
     }
 
