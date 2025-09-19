@@ -1,5 +1,6 @@
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedLayout from "./components/ProtectedLayout";
 import Game from "./page/Game";
@@ -11,8 +12,14 @@ import History from "./page/History";
 import Notification from "./page/Notification";
 import Deposit from "./page/profile/Deposit";
 import Withdraw from "./page/profile/Withdraw";
+import telegramService from "./services/telegramService";
 
 const App = () => {
+  // Initialize Telegram service on app load
+  useEffect(() => {
+    telegramService.init();
+  }, []);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
