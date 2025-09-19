@@ -38,7 +38,6 @@ const App = () => {
           <Route path="/notification" element={<Notification />} />
         </Route>
       </Route>
-      {/* If you want /game/:gameID protected, move it inside above */}
       <Route path="/game/:gameID" element={<PlayingPage />} />
     </Routes>
   );
